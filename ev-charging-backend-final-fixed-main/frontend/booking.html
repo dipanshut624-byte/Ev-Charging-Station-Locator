@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Ev Charging Station List</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #8BC63F;
+      background: url('https://cms.qz.com/wp-content/uploads/2018/06/Ather.jpg?quality=75&strip=all&w=3200&h=1800') no-repeat center center fixed;
+      
+       /* background: url("https://www.shutterstock.com/shutterstock/photos/1197082075/display_1500/stock-vector-electric-scooter-with-charging-station-vector-illustration-eps-1197082075.jpg"); */
+      background-size: cover;
+      min-height: 100vh;
+      position: relative;
+      color: white;
+    }
+
+    /* YellowGreen transparent overlay */
+    .overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      /* background-color: rgba(154, 205, 50, 0.6); */
+       background-color: rgba(154, 205, 50, 0.15); 
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    h1, #pumpList {
+      position: relative;
+      z-index: 1;
+    }
+
+    h1 {
+      margin: 60px 0 30px 40px;
+      text-align: left;
+      text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7);
+    }
+
+    #pumpList {
+      max-width: 500px;
+      margin: 20px 0 0 40px;
+      text-align: left;
+      background-color: rgba(255, 255, 255, 0.9);
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+      color: black;
+    }
+
+    .pump-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid #ccc;
+    }
+
+    .book-btn {
+      background-color: #28a745;
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+
+    .book-btn:hover {
+      background-color: #218838;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="overlay"></div>
+  
+
+  <h1>Ev Charging Station List</h1>
+  
+  
+  
+
+  <div id="pumpList">
+    <!-- Pump list will be added by JavaScript -->
+  </div>
+
+  <script>
+    const pumps = [
+      { name: "Station A" },
+      { name: "Station B" },
+      { name: "Station C" },
+      { name: "Station C" },
+      { name: "Station d" }
+    ];
+
+    const listContainer = document.getElementById("pumpList");
+
+    pumps.forEach(pump => {
+      const item = document.createElement("div");
+      item.className = "pump-item";
+
+      const nameSpan = document.createElement("span");
+      nameSpan.textContent = pump.name;
+
+      const btn = document.createElement("button");
+      btn.className = "book-btn";
+      btn.textContent = "Show Map";
+      btn.onclick = () => {
+        window.location.href = "map.html";
+      };
+
+      item.appendChild(nameSpan);
+      item.appendChild(btn);
+      listContainer.appendChild(item);
+    });
+  </script>
+
+</body>
+</html>

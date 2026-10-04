@@ -1,0 +1,304 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Register Page</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #8BC63F;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    header {
+      background-color: #8BC63F;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 40px;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+    }
+
+    .logo img {
+      height: 50px;
+    }
+
+    nav ul {
+      list-style: none;
+      display: flex;
+      gap: 25px;
+    }
+
+    nav ul li a {
+      text-decoration: none;
+      color: white;
+      font-weight: bold;
+      font-size: 16px;
+      transition: color 0.3s ease;
+    }
+
+    nav ul li a:hover {
+      color: #000;
+    }
+
+    .contact-info {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .quote-btn {
+      background-color: #111;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 20px;
+      text-decoration: none;
+      font-weight: bold;
+    }
+
+    .main {
+      display: flex;
+      flex: 1;
+    }
+
+    .left-side {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 30px;
+    }
+
+    .right-side {
+      flex: 1;
+      background: url('./assets/images/hero-banner.png') no-repeat center center;
+      background-size: contain;
+      background-color: #8BC63F;
+    }
+
+    .register-container {
+      background: white;
+      padding: 40px 30px;
+      border-radius: 10px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+      width: 100%;
+      max-width: 400px;
+    }
+
+    .register-container h2 {
+      text-align: center;
+      margin-bottom: 25px;
+      color: #333;
+    }
+
+    .form-group {
+      margin-bottom: 15px;
+      position: relative;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: bold;
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+
+    .toggle-password {
+      position: absolute;
+      right: 10px;
+      top: 38px;
+      cursor: pointer;
+      user-select: none;
+      font-size: 14px;
+      color: #666;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 10px;
+      background-color: #28a745;
+      border: none;
+      color: white;
+      border-radius: 6px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .btn:hover {
+      background-color: #218838;
+    }
+
+    .login-link {
+      text-align: center;
+      margin-top: 15px;
+    }
+
+    .login-link a {
+      text-decoration: none;
+      color: #007BFF;
+    }
+
+    .login-link a:hover {
+      text-decoration: underline;
+    }
+
+    #message {
+      text-align: center;
+      margin-top: 10px;
+      font-weight: bold;
+    }
+
+    @media (max-width: 768px) {
+      .main {
+        flex-direction: column;
+      }
+      .right-side {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <a href="index.html" class="logo">
+      <img src="./assets/images/logo.svg" alt="Volti Logo">
+      <span style="font-size: 24px; font-weight: bold; color: black;"></span>
+    </a>
+    <nav>
+      <ul>
+        <li><a href="index.html">HOME</a></li>
+        <li><a href="#services">SERVICES</a></li>
+        <li><a href="#about">ABOUT</a></li>
+        <li><a href="#contact">CONTACT US</a></li>
+      </ul>
+    </nav>
+    <div class="contact-info">
+      <span> +(91) 8299890048</span>
+      <a href="#quote" class="quote-btn">GET A QUOTE →</a>
+    </div>
+  </header>
+
+  <div class="main">
+    <div class="left-side">
+      <div class="register-container">
+        <h2>Create Account</h2>
+        <form id="registerForm">
+          <div class="form-group">
+            <label for="fullname">Full Name</label>
+            <input type="text" id="fullname" name="fullname" required />
+          </div>
+          <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" required />
+          </div>
+          <div class="form-group">
+            <label for="username">Username</label>
+            <input type="text" id="username" name="username" required />
+          </div>
+          <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" required />
+            <span id="togglePassword" class="toggle-password">Show</span>
+          </div>
+          <button type="submit" class="btn">Register</button>
+        </form>
+        <div id="message"></div>
+        <div class="login-link">
+          Already have an account? <a href="index.html">Login</a>
+        </div>
+      </div>
+    </div>
+    <div class="right-side"></div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+    import { getAuth, createUserWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAif-DmkjS5AHO7pqeVROvLdfB6XY0qMlI",
+      authDomain: "ev-charging-station-6751c.firebaseapp.com",
+      projectId: "ev-charging-station-6751c",
+      storageBucket: "ev-charging-station-6751c.appspot.com",
+      messagingSenderId: "61773635983",
+      appId: "1:61773635983:web:117bf21af09bdce68d6bfa",
+      measurementId: "G-YHK4Q7M750"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const registerForm = document.getElementById('registerForm');
+      const messageEl = document.getElementById('message');
+      const togglePassword = document.getElementById('togglePassword');
+      const passwordInput = document.getElementById('password');
+
+      togglePassword.addEventListener('click', () => {
+        if (passwordInput.type === 'password') {
+          passwordInput.type = 'text';
+          togglePassword.textContent = 'Hide';
+        } else {
+          passwordInput.type = 'password';
+          togglePassword.textContent = 'Show';
+        }
+      });
+
+      registerForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const fullname = document.getElementById('fullname').value.trim();
+        const email = document.getElementById('email').value.trim();
+        const username = document.getElementById('username').value.trim();
+        const password = passwordInput.value;
+
+        messageEl.textContent = "";
+        messageEl.style.color = "black";
+
+        if (!fullname || !email || !username || !password) {
+          messageEl.style.color = "red";
+          messageEl.textContent = "Please fill all the fields.";
+          return;
+        }
+
+        try {
+          const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+          await updateProfile(auth.currentUser, { displayName: fullname });
+
+          messageEl.style.color = "green";
+          messageEl.textContent = "✅ Registration successful! Redirecting to login...";
+
+          setTimeout(() => {
+            window.location.href = "index.html";
+          }, 1500);
+        } catch (error) {
+          messageEl.style.color = "red";
+          messageEl.textContent = error.message;
+        }
+      });
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,704 @@
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>EV Charging Stations with Directions</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      display: flex;
+      height: 100vh;
+    }
+    .sidebar {
+      width: 300px;
+      padding: 16px;
+      overflow-y: auto;
+      background-color: #f9f9f9;
+      border-right: 1px solid #ccc;
+    }
+    #map {
+      flex: 1;
+    }
+    .station {
+      padding: 10px;
+      border: 1px solid #ddd;
+      margin-bottom: 10px;
+      cursor: pointer;
+    }
+    .station.available {
+      background-color: #e0fce0;
+    }
+    .station.busy {
+      background-color: #fde0e0;
+    }
+    #reservation-image {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: white;
+      padding: 10px;
+      border: 1px solid #ccc;
+      z-index: 1000;
+      display: none;
+    }
+    #reservation-image img {
+      max-width: 300px;
+    }
+  </style>
+</head>
+<body>
+  <div class="sidebar">
+    <h2>Trip Details</h2>
+    <p><strong>From:</strong> <span id="from-location">Getting location...</span></p>
+    <p><strong>To:</strong> <span id="to-location">Select a station</span></p>
+    <h3>EV Charging Stations</h3>
+    <div id="stations"></div>
+  </div>
+
+  <div id="map"></div>
+
+  <div id="reservation-image">
+    <img src="A_split-screen_digital_interface_displays_an_EV_ch.png" alt="Confirmation" />
+  </div>
+
+  <script>
+    let map, directionsService, directionsRenderer;
+
+    function initMap() {
+      map = new google.maps.Map(document.getElementById("map"), {
+        center: { lat: 23.2599, lng: 77.4126 },
+        zoom: 13,
+      });
+
+      directionsService = new google.maps.DirectionsService();
+      directionsRenderer = new google.maps.DirectionsRenderer({ map });
+
+      renderStations();
+      renderRouteFromForm();
+    }
+
+    function geocodeAddress(address) {
+      return new Promise((resolve, reject) => {
+        const geocoder = new google.maps.Geocoder();
+        geocoder.geocode({ address }, (results, status) => {
+          if (status === 'OK') {
+            resolve(results[0].geometry.location);
+          } else {
+            reject(status);
+          }
+        });
+      });
+    }
+
+    async function renderRouteFromForm() {
+      const fromText = localStorage.getItem('fromLocation');
+      const toText = localStorage.getItem('toLocation');
+
+      if (!fromText || !toText) return;
+
+      document.getElementById('from-location').textContent = fromText;
+      document.getElementById('to-location').textContent = toText;
+
+      try {
+        const [fromLatLng, toLatLng] = await Promise.all([
+          geocodeAddress(fromText),
+          geocodeAddress(toText)
+        ]);
+
+        directionsService.route({
+          origin: fromLatLng,
+          destination: toLatLng,
+          travelMode: google.maps.TravelMode.DRIVING
+        }, (result, status) => {
+          if (status === 'OK') {
+            directionsRenderer.setDirections(result);
+            document.getElementById("reservation-image").style.display = "block";
+          } else {
+            alert('Directions request failed: ' + status);
+          }
+        });
+
+      } catch (error) {
+        alert('Geocoding failed: ' + error);
+      }
+    }
+
+    async function renderStations() {
+      const container = document.getElementById("stations");
+      container.innerHTML = '';
+
+      try {
+        const res = await fetch('http://localhost:5000/api/stations');
+        const stations = await res.json();
+
+        stations.forEach(station => {
+          const [lng, lat] = station.location.coordinates;
+
+          const div = document.createElement("div");
+          div.className = `station ${station.availablePorts > 0 ? 'available' : 'busy'}`;
+          div.innerHTML = `
+            <strong>${station.name}</strong><br/>
+            <span>${station.address}</span><br/>
+            <small>Charging Speed: ${station.chargingSpeed}</small><br/>
+            <button ${station.availablePorts > 0 ? '' : 'disabled'}
+              onclick="selectStation(${lat}, ${lng}, '${station.name}', '${station.address}')">
+              Book Now
+            </button>
+          `;
+          container.appendChild(div);
+
+          new google.maps.Marker({
+            position: { lat, lng },
+            map: map,
+            title: station.name,
+            icon: station.availablePorts > 0 ? null : {
+              url: 'http://maps.google.com/mapfiles/ms/icons/red-dot.png'
+            }
+          });
+        });
+      } catch (err) {
+        console.error('Failed to load stations:', err);
+      }
+    }
+
+    function selectStation(lat, lng, name, address) {
+      directionsService.route(
+        {
+          origin: localStorage.getItem('fromLocation'),
+          destination: { lat, lng },
+          travelMode: google.maps.TravelMode.DRIVING,
+        },
+        (result, status) => {
+          if (status === "OK") {
+            directionsRenderer.setDirections(result);
+            document.getElementById("reservation-image").style.display = "block";
+            document.getElementById('to-location').textContent = `${name}, ${address}`;
+          } else {
+            alert("Directions request failed due to " + status);
+          }
+        }
+      );
+    }
+
+    window.selectStation = selectStation;
+    window.initMap = initMap;
+  </script>
+
+ 
+  <script async defer
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDEznKEfKhvoldE0c63J8Jcdu3kpi4GfDk&callback=initMap">
+  </script>
+
+</body>
+</html> -->
+
+
+<!-- <!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>EV Charging Map - Dynamic</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+ 
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+ 
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css" />
+
+  <style>
+    body {
+      margin: 0;
+      display: flex;
+      height: 100vh;
+      font-family: Arial, sans-serif;
+    }
+    #sidebar {
+      width: 300px;
+      padding: 10px;
+      overflow-y: auto;
+      background: #f0f0f0;
+      border-right: 1px solid #ccc;
+    }
+    .station {
+      margin: 10px 0;
+      padding: 10px;
+      background: white;
+      border: 1px solid #ccc;
+      cursor: pointer;
+    }
+    #map {
+      flex: 1;
+    }
+  </style>
+</head>
+<body>
+
+<div id="sidebar">
+  <h3>EV Charging Stations</h3>
+  <div id="station-list">
+ 
+  </div>
+</div>
+
+<div id="map"></div>
+
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.min.js"></script>
+
+<script>
+  let map = L.map('map').setView([23.2599, 77.4126], 6);
+  let routingControl;
+  let currentLocation;
+
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 18,
+    attribution: '© OpenStreetMap contributors'
+  }).addTo(map);
+
+ 
+  const stations = [
+    { name: 'Station A', lat: 12.9716, lng: 77.5946, address: 'MG Road, Bangalore' },
+    { name: 'Station B', lat: 12.9279, lng: 77.6271, address: 'Koramangala, Bangalore' },
+    { name: 'Station C', lat: 13.0033, lng: 77.5500, address: 'Rajajinagar, Bangalore' }
+  ];
+
+  const list = document.getElementById('station-list');
+  stations.forEach(station => {
+    const div = document.createElement('div');
+    div.className = 'station';
+    div.innerHTML = `<strong>${station.name}</strong><br>${station.address}`;
+    div.onclick = () => routeToStation(station);
+    list.appendChild(div);
+
+    L.marker([station.lat, station.lng]).addTo(map).bindPopup(`${station.name}<br>${station.address}`);
+  });
+
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(position => {
+      currentLocation = [position.coords.latitude, position.coords.longitude];
+      L.marker(currentLocation).addTo(map).bindPopup('You are here').openPopup();
+      map.setView(currentLocation, 10);
+    }, () => {
+      alert('Could not access location. Using default location.');
+      currentLocation = [23.2599, 77.4126]; 
+      map.setView(currentLocation, 6);
+    });
+  } else {
+    alert('Geolocation not supported. Using default location.');
+    currentLocation = [23.2599, 77.4126];
+    map.setView(currentLocation, 6);
+  }
+
+  
+  function routeToStation(station) {
+    if (!currentLocation) {
+      alert('Current location not available');
+      return;
+    }
+
+    if (routingControl) {
+      routingControl.setWaypoints([L.latLng(currentLocation), L.latLng(station.lat, station.lng)]);
+    } else {
+      routingControl = L.Routing.control({
+        waypoints: [
+          L.latLng(currentLocation),
+          L.latLng(station.lat, station.lng)
+        ],
+        routeWhileDragging: false
+      }).addTo(map);
+    }
+  }
+</script>
+
+</body>
+</html> -->
+
+
+
+
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>EV Charging Stations</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css" />
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: sans-serif;
+    }
+    #container {
+      display: flex;
+      height: 100vh;
+    }
+    .sidebar {
+      width: 300px;
+      padding: 10px;
+      overflow-y: auto;
+      background: #f9f9f9;
+      border-right: 1px solid #ccc;
+    }
+    .station {
+      border: 1px solid #ccc;
+      padding: 10px;
+      margin-bottom: 10px;
+      border-radius: 5px;
+      background: #e0ffe0;
+    }
+    .station.busy {
+      background: #ffe0e0;
+    }
+    #map {
+      flex: 1;
+    }
+    @media (max-width: 768px) {
+      #container {
+        flex-direction: column;
+      }
+      .sidebar {
+        width: 100%;
+        height: 200px;
+        overflow-y: scroll;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div id="container">
+  <div class="sidebar">
+    <h3>Trip Details</h3>
+    <p><strong>From:</strong> <span id="from"></span></p>
+    <p><strong>To:</strong> <span id="to">Select a station</span></p>
+    <div id="stations"></div>
+  </div>
+  <div id="map"></div>
+</div>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.min.js"></script>
+  <script async defer
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDEznKEfKhvoldE0c63J8Jcdu3kpi4GfDk&callback=initMap">
+  </script>
+<script>
+  let map, currentMarker, routingControl;
+  let currentLocation;
+function initMap() {
+  
+  map = L.map('map').setView([23.2599, 77.4126], 13);
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap contributors'
+  }).addTo(map);
+
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(pos => {
+      currentLocation = [pos.coords.latitude, pos.coords.longitude];
+      document.getElementById('from').textContent = `Lat: ${currentLocation[0].toFixed(4)}, Lng: ${currentLocation[1].toFixed(4)}`;
+
+      currentMarker = L.marker(currentLocation).addTo(map).bindPopup("You are here").openPopup();
+      map.setView(currentLocation, 13);
+    }, () => {
+      alert("Location access denied");
+    });
+  }
+
+  loadStations();
+}
+
+  async function loadStations() {
+    try {
+      const res = await fetch('http://localhost:5000/api/stations');
+      const stations = await res.json();
+
+      stations.forEach(station => {
+        const [lng, lat] = station.location.coordinates;
+        const stationLatLng = [lat, lng];
+
+        const div = document.createElement("div");
+        div.className = `station ${station.availablePorts === 0 ? 'busy' : ''}`;
+        div.innerHTML = `
+          <strong>${station.name}</strong><br>
+          ${station.address}<br>
+          Charging Speed: ${station.chargingSpeed}<br>
+          <button ${station.availablePorts === 0 ? 'disabled' : ''}>Book</button>
+        `;
+        div.querySelector('button').onclick = () => showRouteTo(stationLatLng, station.name, station.address);
+        document.getElementById('stations').appendChild(div);
+
+        L.marker(stationLatLng, {
+          icon: L.icon({
+            iconUrl: station.availablePorts === 0 ?
+              'http://maps.google.com/mapfiles/ms/icons/red-dot.png' :
+              'http://maps.google.com/mapfiles/ms/icons/green-dot.png',
+            iconSize: [32, 32],
+            iconAnchor: [16, 32]
+          })
+        }).addTo(map).bindPopup(`<b>${station.name}</b><br>${station.address}`);
+      });
+    } catch (err) {
+      alert("Failed to load stations.");
+      console.error(err);
+    }
+  }
+
+  function showRouteTo(destLatLng, name, address) {
+    if (!currentLocation) {
+      alert("Your location is not available.");
+      return;
+    }
+
+    document.getElementById('to').textContent = `${name}, ${address}`;
+
+    if (routingControl) {
+      routingControl.setWaypoints([currentLocation, destLatLng]);
+    } else {
+      routingControl = L.Routing.control({
+        waypoints: [
+          L.latLng(currentLocation),
+          L.latLng(destLatLng)
+        ],
+        routeWhileDragging: false
+      }).addTo(map);
+    }
+  }
+
+  initMap();
+  
+</script>
+
+
+</body>
+</html> -->
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>EV Charging Stations</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css" />
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: sans-serif;
+    }
+    #container {
+      display: flex;
+      height: 100vh;
+    }
+    .sidebar {
+      width: 300px;
+      padding: 10px;
+      overflow-y: auto;
+      background: #f9f9f9;
+      border-right: 1px solid #ccc;
+    }
+    .station {
+      border: 1px solid #ccc;
+      padding: 10px;
+      margin-bottom: 10px;
+      border-radius: 5px;
+      background: #e0ffe0;
+    }
+    .station.busy {
+      background: #ffe0e0;
+    }
+    #map {
+      flex: 1;
+    }
+    #loading {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: white;
+      padding: 5px 15px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      z-index: 1000;
+    }
+    @media (max-width: 768px) {
+      #container {
+        flex-direction: column;
+      }
+      .sidebar {
+        width: 100%;
+        height: 200px;
+        overflow-y: scroll;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div id="loading">Loading stations...</div>
+
+<div id="container">
+  <div class="sidebar">
+    <h3>Trip Details</h3>
+    <p><strong>From:</strong> <span id="from"></span></p>
+    <p><strong>To:</strong> <span id="to">Select a station</span></p>
+    <div id="stations"></div>
+  </div>
+  <div id="map"></div>
+</div>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.min.js"></script>
+<script>
+  let map, currentMarker, routingControl;
+  const currentLocation = [23.2495, 77.4344];
+   // Bhopal Ayodhya Bypass fallback
+
+ function initMap() {
+  map = L.map('map').setView(currentLocation, 13);
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap contributors'
+  }).addTo(map);
+
+//   currentMarker = L.marker(currentLocation).addTo(map).bindPopup("Current Location (default)").openPopup() ;
+// currentMarker.dragging.disable();
+currentMarker = L.marker(currentLocation, {
+  draggable: false
+}).addTo(map).bindPopup("Current Location (default)").openPopup();
+
+
+
+
+  // Lock location after initial set to prevent auto-updating
+  window.locationLocked = true;
+
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        if (pos.coords.accuracy && pos.coords.accuracy < 100) {
+          const newLocation = [pos.coords.latitude, pos.coords.longitude];
+
+          // Only update if not locked
+          if (!window.locationLocked) {
+            currentLocation = newLocation;
+            currentMarker.setLatLng(currentLocation).bindPopup("You are here").openPopup();
+            map.setView(currentLocation, 13);
+          }
+
+          document.getElementById('from').textContent = `Lat: ${newLocation[0].toFixed(4)}, Lng: ${newLocation[1].toFixed(4)}`;
+        } else {
+          document.getElementById('from').textContent = `Lat: ${currentLocation[0].toFixed(4)}, Lng: ${currentLocation[1].toFixed(4)} (Using default location due to GPS accuracy)`;
+        }
+        loadStations();
+      },
+      err => {
+        document.getElementById('from').textContent = `Lat: ${currentLocation[0].toFixed(4)}, Lng: ${currentLocation[1].toFixed(4)} (Using default location)`;
+        loadStations();
+      },
+      { timeout: 10000 }
+    );
+  } else {
+    document.getElementById('from').textContent = `Lat: ${currentLocation[0].toFixed(4)}, Lng: ${currentLocation[1].toFixed(4)} (Geolocation not supported)`;
+    loadStations();
+  }
+}
+
+
+  async function loadStations() {
+    document.getElementById('loading').style.display = 'block';
+
+    try {
+      const res = await fetch('https://ev-charging-backend-final-fixed.onrender.com/api/stations');
+      const stations = await res.json();
+
+      stations.forEach(station => {
+        const [lng, lat] = station.location.coordinates;
+        const stationLatLng = [lat, lng];
+
+        const div = document.createElement("div");
+        div.className = `station ${station.availablePorts === 0 ? 'busy' : ''}`;
+        div.innerHTML = `
+          <strong>${station.name}</strong><br>
+          ${station.address}<br>
+          Charging Speed: ${station.chargingSpeed}<br>
+          <button ${station.availablePorts === 0 ? 'disabled' : ''}>Book</button>
+        `;
+        div.querySelector('button').onclick = () => {
+          showRouteTo(stationLatLng, station.name, station.address);
+          alert(`Booking confirmed at ${station.name}`);
+        };
+        document.getElementById('stations').appendChild(div);
+
+        L.marker(stationLatLng, {
+          icon: L.icon({
+            iconUrl: station.availablePorts === 0 ?
+              'http://maps.google.com/mapfiles/ms/icons/red-dot.png' :
+              'http://maps.google.com/mapfiles/ms/icons/green-dot.png',
+            iconSize: [32, 32],
+            iconAnchor: [16, 32]
+          })
+        }).addTo(map).bindPopup(`<b>${station.name}</b><br>${station.address}`);
+      });
+
+    } catch (err) {
+      alert("Failed to load stations.");
+      console.error(err);
+    } finally {
+      document.getElementById('loading').style.display = 'none';
+    }
+  }
+
+function showRouteTo(destLatLng, name, address) {
+  if (!currentMarker) {
+    alert("Your location is not available.");
+    return;
+  }
+
+  document.getElementById('to').textContent = `${name}, ${address}`;
+
+  const start = currentMarker.getLatLng(); // Use actual marker position
+
+  if (routingControl) {
+    routingControl.setWaypoints([
+      start,
+      L.latLng(destLatLng)
+    ]);
+  } else {
+   routingControl = L.Routing.control({
+  waypoints: [
+    currentMarker.getLatLng(),
+    L.latLng(destLatLng)
+  ],
+  routeWhileDragging: false,
+  draggableWaypoints: false,
+  createMarker: function(i, wp, nWps) {
+    // Prevent LRM from creating its own start marker (which moves the blue one)
+    if (i === 0) return null; // Don't add a marker at the start (we already have the blue pin)
+    return L.marker(wp.latLng); // Add only destination marker
+  },
+  lineOptions: {
+    styles: [{ color: 'red', opacity: 0.7, weight: 5 }]
+  },
+  summaryTemplate: '<strong>Route Info</strong><br>{distance} / {time}'
+}).addTo(map);
+
+}
+}
+
+
+  initMap();
+</script>
+
+</body>
+</html>
+  
